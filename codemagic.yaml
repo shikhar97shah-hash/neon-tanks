@@ -1,0 +1,53 @@
+# Codemagic CI build for Neon Tanks (Capacitor iOS) — builds & submits with NO Mac.
+# Docs: https://docs.codemagic.io  (UI changes over time; verify field names there.)
+#
+# ONE-TIME SETUP IN THE CODEMAGIC WEB UI (codemagic.io):
+#   1. Sign up, connect the Git repo that holds this ios-app/ folder.
+#   2. Teams > Integrations > Apple Developer Portal: add an "App Store Connect API key"
+#      (create the key at appstoreconnect.apple.com > Users and Access > Integrations > keys).
+#      Name the integration exactly:  codemagic
+#   3. Replace APP_STORE_APPLE_ID below with your app's numeric Apple ID
+#      (App Store Connect > your app > App Information > "Apple ID").
+
+workflows:
+  ios-capacitor:
+    name: Neon Tanks iOS
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    integrations:
+      app_store_connect: codemagic        # must match the integration name from setup step 2
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.upakarna.neontanks
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+        APP_STORE_APPLE_ID: 0000000000     # <-- replace with your numeric app id
+      node: latest
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install JS dependencies
+        script: npm install
+      - name: Generate & sync the iOS project
+        script: |
+          npx cap add ios || true
+          npx cap sync ios
+      - name: Install CocoaPods
+        script: |
+          cd ios/App && pod install
+      - name: Set up signing
+        script: |
+          xcode-project use-profiles
+      - name: Build signed IPA
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true        # lands in TestFlight; promote to release in App Store Connect

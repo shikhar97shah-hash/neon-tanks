@@ -1,0 +1,12 @@
+{
+  "appId": "com.upakarna.neontanks",
+  "appName": "Neon Tanks",
+  "webDir": "www",
+  "server": {
+    "iosScheme": "neontanks"
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#070b18"
+  }
+}
